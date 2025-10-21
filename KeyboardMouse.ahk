@@ -10,32 +10,32 @@ CoordMode, ToolTip, Screen
 
 ;-------------------------------------------------------
 
-cursorMover_toolTipTimeout := 1500
+toolTipTimeout := 1500
 iniFile := regexreplace(A_ScriptFullPath, "\.[^.]+$", ".ini")
 
 ; Possible directions (object keys are used in ini direction naming as well)
-cursorMover_directions := {}
-cursorMover_directions["Left"] := {axises: {x:-1, y:0}}
-cursorMover_directions["Right"] := {axises: {x:1, y:0}}
-cursorMover_directions["Up"] := {axises: {x:0, y:-1}}
-cursorMover_directions["Down"] := {axises: {x:0, y:1}}
+directions := {}
+directions["Left"] := {axises: {x:-1, y:0}}
+directions["Right"] := {axises: {x:1, y:0}}
+directions["Up"] := {axises: {x:0, y:-1}}
+directions["Down"] := {axises: {x:0, y:1}}
 
-cursorMover_cursorMoving := false
-cursorMover_continousMouseControllOn := false
+cursorMoving := false
+continuousMouseControlOn := false
 
 ;-----------------------
 
 scriptSectionName := "hotkeys"
 scriptOptionSectionName := "options"
 
-IniRead, cursorMover_cursorSpeedOptions, %iniFile% , %scriptOptionSectionName%, cursorSpeedOptions, %A_Space%
-IniRead, cursorMover_cursorSpeedIndex, %iniFile% , %scriptOptionSectionName%, initialSpeedOptionIndex, %A_Space%
+IniRead, cursorSpeedOptions, %iniFile% , %scriptOptionSectionName%, cursorSpeedOptions, %A_Space%
+IniRead, cursorSpeedIndex, %iniFile% , %scriptOptionSectionName%, initialSpeedOptionIndex, %A_Space%
 
-; cursorMover_cursorSpeedIndex - Describes which speed option is set at the moment from cursorMover_cursorSpeedOptions
+; cursorSpeedIndex - Describes which speed option is set at the moment from cursorSpeedOptions
 ; By default 0, if the options are default as well, then 2.
-cursorMover_cursorSpeedIndex := cursorMover_cursorSpeedIndex == "" ? (cursorMover_cursorSpeedOptions == "" ? 2 : 0) : cursorMover_cursorSpeedIndex
-; cursorMover_cursorSpeedOptions - The possible cursor speed options to switch from
-cursorMover_cursorSpeedOptions := cursorMover_cursorSpeedOptions == "" ? [50, 100, 250, 500, 1000, 2500, 5000, 10000] : StrSplit(cursorMover_cursorSpeedOptions, ",", " ")
+cursorSpeedIndex := cursorSpeedIndex == "" ? (cursorSpeedOptions == "" ? 2 : 0) : cursorSpeedIndex
+; cursorSpeedOptions - The possible cursor speed options to switch from
+cursorSpeedOptions := cursorSpeedOptions == "" ? [50, 100, 250, 500, 1000, 2500, 5000, 10000] : StrSplit(cursorSpeedOptions, ",", " ")
 
 ;-------------------------------------------------------
 
@@ -43,7 +43,7 @@ prepareContinousMouseControll()
 mapConfigHotkeyToFunction(iniFile, scriptSectionName, "setContinuousMouseControl")
 
 ; 1 pixel movement
-for direction, directionData in cursorMover_directions {
+for direction, directionData in directions {
 	mapConfigHotkeyToFunction(iniFile, scriptSectionName, ["moveCursor" . direction, "moveCursor"], [directionData.axises.x, directionData.axises.y])
 }
 
@@ -56,20 +56,20 @@ moveCursor(x, y) {
 
 ;-------------------------------------------------------
 
-#If cursorMover_continousMouseControllOn
+#If continuousMouseControlOn
 #If
 
 prepareContinousMouseControll() {
 	global iniFile
 	global scriptSectionName
-	global cursorMover_continousMouseControllOn ;Set in setContinuousMouseControl
-	global cursorMover_cursorMoving ;Set in moveCursorContinously based on cursor is being moved or not
-	global cursorMover_directions ;Set at top of the script
+	global continuousMouseControlOn ;Set in setContinuousMouseControl
+	global cursorMoving ;Set in moveCursorContinuously based on cursor is being moved or not
+	global directions ;Set at top of the script
 
-	Hotkey If, cursorMover_continousMouseControllOn
+	Hotkey If, continuousMouseControlOn
 
 	; Set cursor mover hotkeys
-	for direction, directionData in cursorMover_directions {
+	for direction, directionData in directions {
 		; Save moving keys to later check their state
 		iniKey := "moveCursorContinously" . direction
 		IniRead, directionHotkey, %iniFile% , %scriptSectionName%, %iniKey%, %A_Space%
@@ -99,21 +99,21 @@ prepareContinousMouseControll() {
 }
 
 setContinuousMouseControl() {
-	global cursorMover_continousMouseControllOn ;Global value to set here
-	global cursorMover_toolTipTimeout ;Set at top of the script
-	cursorMover_continousMouseControllOn := !cursorMover_continousMouseControllOn
+	global continuousMouseControlOn ;Global value to set here
+	global toolTipTimeout ;Set at top of the script
+	continuousMouseControlOn := !continuousMouseControlOn
 
-	tmpToolTip("Continous mouse controll: " . (cursorMover_continousMouseControllOn ? "On" : "Off"), cursorMover_toolTipTimeout)
+	tmpToolTip("Continous mouse controll: " . (continuousMouseControlOn ? "On" : "Off"), toolTipTimeout)
 }
 
 moveCursorContinously() {
-	global cursorMover_cursorMoving
-	global cursorMover_directions
+	global cursorMoving
+	global directions
 
-	if (cursorMover_cursorMoving) {
+	if (cursorMoving) {
 		return
 	} else
-		cursorMover_cursorMoving := true
+		cursorMoving := true
 
 	lastTime := A_TickCount
 	stillMoving := true
@@ -122,7 +122,7 @@ moveCursorContinously() {
 		stillMoving := false
 		directionSum := {x:0, y:0}
 
-		for direction, directionData in cursorMover_directions {
+		for direction, directionData in directions {
 			if (GetKeyState(directionData["hotkey"], "P")) {
 				stillMoving := true
 
@@ -140,22 +140,22 @@ moveCursorContinously() {
 		moveCursor(pixelsToMove * directionSum.x, pixelsToMove * directionSum.y)
 	}
 
-	cursorMover_cursorMoving := false
+	cursorMoving := false
 }
 
 changeCursorSpeed(step) {
-	global cursorMover_cursorSpeedIndex ;Set at top of the script
-	global cursorMover_cursorSpeedOptions ;Set at top of the script
-	global cursorMover_toolTipTimeout ;Set at top of the script
-	cursorMover_cursorSpeedIndex := mathMod(cursorMover_cursorSpeedIndex + step, cursorMover_cursorSpeedOptions.MaxIndex())
+	global cursorSpeedIndex ;Set at top of the script
+	global cursorSpeedOptions ;Set at top of the script
+	global toolTipTimeout ;Set at top of the script
+	cursorSpeedIndex := mathMod(cursorSpeedIndex + step, cursorSpeedOptions.MaxIndex())
 
-	tmpToolTip("Cursor speed: " . getCursorSpeed() . "px / sec", cursorMover_toolTipTimeout)
+	tmpToolTip("Cursor speed: " . getCursorSpeed() . "px / sec", toolTipTimeout)
 }
 
 getCursorSpeed() {
-	global cursorMover_cursorSpeedIndex ;Set in changeCursorSpeed
-	global cursorMover_cursorSpeedOptions ;Set at top of the script
-	return cursorMover_cursorSpeedOptions[cursorMover_cursorSpeedIndex + 1]
+	global cursorSpeedIndex ;Set in changeCursorSpeed
+	global cursorSpeedOptions ;Set at top of the script
+	return cursorSpeedOptions[cursorSpeedIndex + 1]
 }
 
 mouseAction(keyToSend, triggerKey) {
