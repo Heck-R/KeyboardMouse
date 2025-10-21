@@ -71,13 +71,13 @@ prepareContinousMouseControll() {
 	; Set cursor mover hotkeys
 	for direction, directionData in directions {
 		; Save moving keys to later check their state
-		iniKey := "moveCursorContinously" . direction
+		iniKey := "moveCursorContinuously" . direction
 		IniRead, directionHotkey, %iniFile% , %scriptSectionName%, %iniKey%, %A_Space%
 		if (directionHotkey != "")
 			directionData["hotkey"] := directionHotkey
 
 		; Set cursor mover hotkey
-		mapConfigHotkeyToFunction(iniFile, scriptSectionName, [iniKey, "moveCursorContinously"])
+		mapConfigHotkeyToFunction(iniFile, scriptSectionName, [iniKey, "moveCursorContinuously"])
 	}
 
 	mapConfigHotkeyToFunction(iniFile, scriptSectionName, ["changeCursorSpeedUp", "changeCursorSpeed"], [1])
@@ -106,7 +106,7 @@ setContinuousMouseControl() {
 	tmpToolTip("Continous mouse controll: " . (continuousMouseControlOn ? "On" : "Off"), toolTipTimeout)
 }
 
-moveCursorContinously() {
+moveCursorContinuously() {
 	global cursorMoving
 	global directions
 
